@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ task.title }} | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Back Navigation & Action Buttons -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="{% url 'tasks:project_detail' task.project.pk %}" class="text-muted text-decoration-none small">
+                &larr; Back to {{ task.project.name }}
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'tasks:task_update' task.pk %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil me-1"></i> Edit Task
+                </a>
+                <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i> Delete
+                </a>
+            </div>
+        </div>
+
+        <!-- Task Main Card -->
+        <div class="card p-4 bg-white mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                <div>
+                    <span class="badge bg-secondary-subtle text-secondary mb-2">{{ task.project.name }}</span>
+                    <h3 class="fw-bold mb-0">{{ task.title }}</h3>
+                </div>
+                <div class="d-flex gap-2">
+                    <!-- Status Badge -->
+                    {% if task.status == 'done' %}
+                        <span class="badge bg-success fs-6">Done</span>
+                    {% elif task.status == 'in_progress' %}
+                        <span class="badge bg-warning text-dark fs-6">In Progress</span>
+                    {% else %}
+                        <span class="badge bg-secondary fs-6">To Do</span>
+                    {% endif %}
+
+                    <!-- Priority Badge -->
+                    {% if task.priority == 'urgent' %}
+                        <span class="badge bg-danger fs-6">Urgent</span>
+                    {% elif task.priority == 'high' %}
+                        <span class="badge bg-warning text-dark fs-6">High Priority</span>
+                    {% elif task.priority == 'medium' %}
+                        <span class="badge bg-info text-dark fs-6">Medium Priority</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark border fs-6">Low Priority</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Task Metadata Grid -->
+            <div class="row g-3 py-3 border-top border-bottom my-2 bg-light rounded px-2 small">
+                <div class="col-sm-4">
+                    <div class="text-muted">Assignee:</div>
+                    <div class="fw-semibold">
+                        {% if task.assigned_to %}
+                            <i class="bi bi-person-circle me-1 text-primary"></i> {{ task.assigned_to.username }}
+                        {% else %}
+                            <span class="text-muted fst-italic">Unassigned</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="text-muted">Due Date:</div>
+                    <div class="fw-semibold {% if task.is_overdue %}text-danger{% endif %}">
+                        {% if task.due_date %}
+                            <i class="bi bi-calendar-event me-1"></i> {{ task.due_date|date:"F d, Y" }}
+                            {% if task.is_overdue %}<span class="badge bg-danger ms-1">Overdue</span>{% endif %}
+                        {% else %}
+                            <span class="text-muted">&mdash;</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="text-muted">Created by:</div>
+                    <div class="fw-semibold">
+                        {{ task.created_by.username }} <span class="text-muted" style="font-size: 0.75rem;">({{ task.created_at|date:"M d, Y" }})</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mt-3">
+                <h6 class="fw-bold text-muted small text-uppercase">Description</h6>
+                <div class="text-secondary" style="white-space: pre-line;">
+                    {{ task.description|default:"No description provided for this task." }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments & Activity Section -->
+        <div class="card p-4 bg-white">
+            <h5 class="fw-bold mb-3">
+                <i class="bi bi-chat-left-dots text-primary me-2"></i> Discussion & Updates ({{ comments|length }})
+            </h5>
+
+            <!-- Add Comment Form -->
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                <div class="mb-2">
+                    {{ comment_form.content }}
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-sm btn-primary px-3 fw-semibold">
+                        <i class="bi bi-send me-1"></i> Post Comment
+                    </button>
+                </div>
+            </form>
+
+            <!-- Comments Timeline List -->
+            {% if comments %}
+            <div class="d-flex flex-column gap-3">
+                {% for comment in comments %}
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-fill text-muted"></i>
+                            <span class="fw-bold text-dark">{{ comment.author.username }}</span>
+                            <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.7rem;">{{ comment.author.role }}</span>
+                        </div>
+                        <span class="text-muted small">{{ comment.created_at|timesince }} ago</span>
+                    </div>
+                    <p class="mb-0 text-secondary small" style="white-space: pre-line;">{{ comment.content }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted small text-center my-3">No comments yet. Start the conversation!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

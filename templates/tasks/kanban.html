@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kanban Board: {{ project.name }} | TaskFlow{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Kanban Board Header -->
+<div class="card p-4 bg-white mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="{% url 'tasks:project_detail' project.pk %}" class="text-muted text-decoration-none small">&larr; Back to Table View</a>
+                <span class="text-muted small">&bull;</span>
+                <span class="badge bg-secondary-subtle text-secondary small">Kanban View</span>
+            </div>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-kanban text-primary"></i> {{ project.name }}
+            </h2>
+            <p class="text-muted small mb-0">
+                Drag cards across columns or use the quick-action menu to update task status in real time via REST API.
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Project Selector Dropdown if user has access to multiple projects -->
+            {% if user_projects and user_projects|length > 1 %}
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown">
+                    Switch Project
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for p in user_projects %}
+                    <li>
+                        <a class="dropdown-item {% if p.id == project.id %}active{% endif %}" href="{% url 'tasks:project_kanban' p.pk %}">
+                            {{ p.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-table me-1"></i> Table View
+            </a>
+            <a href="{% url 'tasks:task_create' %}?project={{ project.pk }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i> Add Task
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Kanban Columns Container -->
+<div class="kanban-board-container">
+    <div class="kanban-columns-row">
+
+        <!-- Column 1: To Do -->
+        <div class="kanban-column kanban-column-todo">
+            <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-circle text-secondary"></i>
+                    <span>To Do</span>
+                </div>
+                <span class="badge bg-secondary rounded-pill" id="count-todo">{{ todo_tasks|length }}</span>
+            </div>
+
+            <div class="kanban-tasks-list" data-status="todo">
+                {% for task in todo_tasks %}
+                    {% include 'tasks/includes/kanban_card.html' with task=task current_status='todo' %}
+                {% empty %}
+                    <div class="kanban-empty-placeholder">No tasks in this stage</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Column 2: In Progress -->
+        <div class="kanban-column kanban-column-in_progress">
+            <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-hourglass-split text-warning"></i>
+                    <span>In Progress</span>
+                </div>
+                <span class="badge bg-warning text-dark rounded-pill" id="count-in_progress">{{ in_progress_tasks|length }}</span>
+            </div>
+
+            <div class="kanban-tasks-list" data-status="in_progress">
+                {% for task in in_progress_tasks %}
+                    {% include 'tasks/includes/kanban_card.html' with task=task current_status='in_progress' %}
+                {% empty %}
+                    <div class="kanban-empty-placeholder">No tasks in this stage</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Column 3: Done -->
+        <div class="kanban-column kanban-column-done">
+            <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-check2-circle text-success"></i>
+                    <span>Done</span>
+                </div>
+                <span class="badge bg-success rounded-pill" id="count-done">{{ done_tasks|length }}</span>
+            </div>
+
+            <div class="kanban-tasks-list" data-status="done">
+                {% for task in done_tasks %}
+                    {% include 'tasks/includes/kanban_card.html' with task=task current_status='done' %}
+                {% empty %}
+                    <div class="kanban-empty-placeholder">No tasks in this stage</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Async API Feedback Toast Notification -->
+<div class="kanban-toast-container">
+    <div id="kanbanToast" class="toast align-items-center border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div id="kanbanToastHeader" class="toast-header bg-success text-white">
+            <i class="bi bi-check2-circle me-2"></i>
+            <strong class="me-auto">Task Updated</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div id="kanbanToastBody" class="toast-body bg-white text-dark py-2">
+            Status updated successfully.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/kanban.js' %}"></script>
+{% endblock %}

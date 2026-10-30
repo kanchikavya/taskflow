@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | TaskFlow{% endblock %}
+
+{% block content %}
+<!-- Welcome & Quick Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="fw-bold mb-1">Hello, {{ user.first_name|default:user.username }}! 👋</h2>
+        <p class="text-muted mb-0">Here is your team's task progress and priority overview.</p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if user.is_manager_role %}
+        <a href="{% url 'tasks:project_create' %}" class="btn btn-outline-primary">
+            <i class="bi bi-folder-plus me-1"></i> New Project
+        </a>
+        {% endif %}
+        <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> New Task
+        </a>
+    </div>
+</div>
+
+<!-- Overdue Alert Banner -->
+{% if overdue_tasks %}
+<div class="alert alert-danger d-flex align-items-center justify-content-between shadow-sm mb-4" role="alert">
+    <div>
+        <i class="bi bi-alarm-fill fs-5 me-2"></i>
+        <strong>Attention needed:</strong> You have <strong>{{ overdue_tasks|length }}</strong> overdue task(s) requiring immediate updates!
+    </div>
+</div>
+{% endif %}
+
+<!-- Metrics Cards Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border-start border-primary border-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Projects</div>
+                    <div class="fs-3 fw-bold text-dark">{{ total_projects_count }}</div>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                    <i class="bi bi-folder2-open fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border-start border-secondary border-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">To Do</div>
+                    <div class="fs-3 fw-bold text-secondary">{{ status_counts.todo }}</div>
+                </div>
+                <div class="bg-secondary-subtle text-secondary p-3 rounded-circle">
+                    <i class="bi bi-list-task fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border-start border-warning border-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">In Progress</div>
+                    <div class="fs-3 fw-bold text-warning">{{ status_counts.in_progress }}</div>
+                </div>
+                <div class="bg-warning-subtle text-warning p-3 rounded-circle">
+                    <i class="bi bi-hourglass-split fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border-start border-success border-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Done</div>
+                    <div class="fs-3 fw-bold text-success">{{ status_counts.done }}</div>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-circle">
+                    <i class="bi bi-check2-circle fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main 2-Column Section -->
+<div class="row g-4">
+    <!-- Left Column: My Assigned Tasks -->
+    <div class="col-lg-8">
+        <div class="card p-4 h-100 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-person-check text-primary me-2"></i> My Assigned Tasks
+                </h5>
+                <span class="badge bg-light text-dark border">{{ my_tasks|length }} assigned</span>
+            </div>
+
+            {% if my_tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Task</th>
+                            <th>Project</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in my_tasks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'tasks:task_detail' task.pk %}" class="fw-semibold text-dark text-decoration-none hover-primary">
+                                    {{ task.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary">{{ task.project.name }}</span>
+                            </td>
+                            <td>
+                                {% if task.priority == 'urgent' %}
+                                    <span class="badge bg-danger">Urgent</span>
+                                {% elif task.priority == 'high' %}
+                                    <span class="badge bg-warning text-dark">High</span>
+                                {% elif task.priority == 'medium' %}
+                                    <span class="badge bg-info text-dark">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.status == 'done' %}
+                                    <span class="badge bg-success">Done</span>
+                                {% elif task.status == 'in_progress' %}
+                                    <span class="badge bg-warning text-dark">In Progress</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">To Do</span>
+                                {% endif %}
+                            </td>
+                            <td class="small {% if task.is_overdue %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                {% if task.due_date %}
+                                    {{ task.due_date|date:"M d, Y" }}
+                                    {% if task.is_overdue %}<i class="bi bi-exclamation-circle ms-1" title="Overdue"></i>{% endif %}
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-check-circle display-4 text-success opacity-50 mb-2"></i>
+                <p class="mb-1">You currently have no assigned pending tasks.</p>
+                <a href="{% url 'tasks:task_create' %}" class="btn btn-sm btn-outline-primary mt-2">Create a task</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Overdue Tasks & Active Projects -->
+    <div class="col-lg-4">
+        <!-- Overdue Tasks Card -->
+        {% if overdue_tasks %}
+        <div class="card p-3 mb-4 border-danger bg-white">
+            <h6 class="fw-bold text-danger mb-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> Overdue Tasks
+            </h6>
+            <ul class="list-group list-group-flush small">
+                {% for task in overdue_tasks %}
+                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{% url 'tasks:task_detail' task.pk %}" class="text-dark fw-semibold text-decoration-none">
+                            {{ task.title }}
+                        </a>
+                        <div class="text-muted" style="font-size: 0.75rem;">Due: {{ task.due_date|date:"M d" }} &bull; {{ task.project.name }}</div>
+                    </div>
+                    <span class="badge bg-danger">{{ task.get_priority_display }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Active Projects Card -->
+        <div class="card p-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Active Projects</h5>
+                <a href="{% url 'tasks:project_list' %}" class="small text-decoration-none">View All</a>
+            </div>
+
+            {% if recent_projects %}
+            <div class="d-flex flex-column gap-3">
+                {% for project in recent_projects %}
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <a href="{% url 'tasks:project_detail' project.pk %}" class="fw-bold text-dark text-decoration-none">
+                            {{ project.name }}
+                        </a>
+                        <span class="badge bg-primary rounded-pill">{{ project.task_count }} tasks</span>
+                    </div>
+                    <p class="text-muted small mt-1 mb-2 text-truncate">{{ project.description|default:"No description" }}</p>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span><i class="bi bi-people me-1"></i> {{ project.members.count }} members</span>
+                        <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-sm btn-link p-0 text-decoration-none">Open &rarr;</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted small mb-0">No active projects found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

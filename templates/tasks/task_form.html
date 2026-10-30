@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card p-4 bg-white">
+            <div class="mb-3">
+                <a href="{% if project %}{% url 'tasks:project_detail' project.pk %}{% elif task %}{% url 'tasks:task_detail' task.pk %}{% else %}{% url 'tasks:dashboard' %}{% endif %}" class="text-muted text-decoration-none small">
+                    &larr; Back
+                </a>
+                <h3 class="fw-bold mt-2">{{ title }}</h3>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if has_projects is False %}
+                <div class="alert alert-warning small py-2 mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    <strong>No projects accessible:</strong> You are not yet a member of any project.
+                    {% if user.is_manager_role %}
+                        <a href="{% url 'tasks:project_create' %}" class="alert-link">Create a project</a> first.
+                    {% else %}
+                        Please ask a Manager or Admin to add you to their project.
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 small">
+                        {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Task Title <span class="text-danger">*</span></label>
+                    {{ form.title }}
+                    {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Project <span class="text-danger">*</span></label>
+                        {{ form.project }}
+                        {% if form.project.errors %}<div class="text-danger small mt-1">{{ form.project.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Assignee</label>
+                        {{ form.assigned_to }}
+                        {% if form.assigned_to.errors %}<div class="text-danger small mt-1">{{ form.assigned_to.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Priority</label>
+                        {{ form.priority }}
+                        {% if form.priority.errors %}<div class="text-danger small mt-1">{{ form.priority.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Status</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}<div class="text-danger small mt-1">{{ form.status.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Due Date</label>
+                        {{ form.due_date }}
+                        {% if form.due_date.errors %}<div class="text-danger small mt-1">{{ form.due_date.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% if project %}{% url 'tasks:project_detail' project.pk %}{% elif task %}{% url 'tasks:task_detail' task.pk %}{% else %}{% url 'tasks:dashboard' %}{% endif %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                        <i class="bi bi-check-lg me-1"></i> Save Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

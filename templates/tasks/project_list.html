@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects | TaskFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="fw-bold mb-1">Team Projects</h2>
+        <p class="text-muted mb-0">Collaborative workspaces for your organization</p>
+    </div>
+    {% if user.is_manager_role %}
+    <a href="{% url 'tasks:project_create' %}" class="btn btn-primary">
+        <i class="bi bi-folder-plus me-1"></i> New Project
+    </a>
+    {% endif %}
+</div>
+
+{% if projects %}
+<div class="row g-4">
+    {% for project in projects %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 p-4 bg-white d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="fw-bold mb-0">
+                        <a href="{% url 'tasks:project_detail' project.pk %}" class="text-dark text-decoration-none">
+                            {{ project.name }}
+                        </a>
+                    </h5>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">
+                        {{ project.task_count }} tasks
+                    </span>
+                </div>
+                <p class="text-muted small mb-3" style="min-height: 40px;">
+                    {{ project.description|truncatewords:20|default:"No description provided." }}
+                </p>
+            </div>
+
+            <div class="border-top pt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 small text-muted">
+                    <span><i class="bi bi-people me-1"></i> {{ project.members.count }} member(s)</span>
+                    <span><i class="bi bi-clock-history me-1"></i> {{ project.created_at|date:"M d, Y" }}</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Lead: <strong>{{ project.created_by.username }}</strong></span>
+                    <div>
+                        <a href="{% url 'tasks:project_kanban' project.pk %}" class="btn btn-sm btn-outline-secondary me-1" title="Open Kanban Board">
+                            <i class="bi bi-kanban"></i>
+                        </a>
+                        <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                            Details &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card p-5 text-center bg-white">
+    <i class="bi bi-folder2-open display-4 text-muted mb-3 opacity-50"></i>
+    <h4>No Projects Available</h4>
+    <p class="text-muted">You are not currently assigned to any projects.</p>
+    {% if user.is_manager_role %}
+    <div>
+        <a href="{% url 'tasks:project_create' %}" class="btn btn-primary">Create Your First Project</a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
